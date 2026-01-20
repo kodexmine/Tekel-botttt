@@ -12,8 +12,8 @@
 </head>
 <body>
     <h3>💎 TEKEL LOG SORGULAMA</h3>
-    <input type="text" id="site" placeholder="Site adı (örn: netflix)">
-    <button id="btn" onclick="sorgula()">LOGLARI ÇEK VE GÖNDER</button>
+    <input type="text" id="site" placeholder="Site adı girin (örn: netflix)">
+    <button onclick="sorgula()">VERİLERİ ÇEK VE GÖNDER</button>
     <div id="status">Durum: Bekleniyor...</div>
 
     <script>
@@ -23,29 +23,28 @@
         async function sorgula() {
             const siteName = document.getElementById('site').value;
             const status = document.getElementById('status');
-            
             if(!siteName) return alert("Lütfen bir site adı girin!");
 
-            status.innerText = "Sorgulanıyor... (Lütfen Bekleyin)";
+            status.innerText = "Bağlantı kuruluyor... Lütfen bekleyin.";
             
-            // Senin verdiğin API linki burada:
+            // Senin verdiğin API adresi
             const apiLink = "https://free.zirveexec.com/api_public.php?site=" + siteName;
             
-            // Tarayıcı engelini (CORS) aşmak için 'allorigins' köprüsünü kullanıyoruz
+            // CORS engelini aşmak için proxy kullanımı
             const proxyUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent(apiLink);
 
             try {
                 const response = await fetch(proxyUrl);
                 const json = await response.json();
-                const data = json.contents; // API'den gelen asıl veri
+                const resultData = json.contents; // API'den gelen asıl veri
 
-                if (data && data.length > 10) {
+                if (resultData && resultData.length > 10) {
                     status.innerText = "✅ Veri çekildi! Bota gönderiliyor...";
-                    // Veriyi Python botuna gönderiyoruz
-                    tg.sendData(JSON.stringify({ site: siteName, data: data }));
+                    // Veriyi bota paketle gönder
+                    tg.sendData(JSON.stringify({ site: siteName, data: resultData }));
                     setTimeout(() => tg.close(), 1000);
                 } else {
-                    status.innerText = "❌ API'den veri gelmedi veya site bulunamadı.";
+                    status.innerText = "❌ API boş döndü veya site bulunamadı.";
                 }
             } catch (e) {
                 status.innerText = "⚠️ Bağlantı Hatası! API şu an yanıt vermiyor olabilir.";
