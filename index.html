@@ -6,44 +6,47 @@
     <style>
         body { background: #0e1621; color: white; text-align: center; padding: 20px; font-family: sans-serif; }
         input { width: 85%; padding: 12px; border-radius: 8px; border: 1px solid #2b5278; background: #17212b; color: white; margin: 15px 0; }
-        button { background: #2481cc; color: white; border: none; padding: 15px; border-radius: 8px; width: 95%; font-weight: bold; cursor: pointer; }
+        button { background: #2481cc; color: white; border: none; padding: 15px; border-radius: 8px; width: 95%; font-weight: bold; cursor: pointer; height: 50px; }
+        #status { margin-top: 15px; color: #ebb434; font-size: 14px; }
     </style>
 </head>
 <body>
     <h3>💎 TEKEL LOG SORGULAMA</h3>
-    <input type="text" id="site" placeholder="Site adı (örn: netflix)">
-    <button onclick="cek()">VERİLERİ ÇEK VE GÖNDER</button>
-    <p id="durum" style="font-size:12px; color: #ebb434; margin-top: 15px;">Hazır.</p>
+    <input type="text" id="siteName" placeholder="Site adı (örn: netflix)">
+    <button onclick="veriyiCek()">SORGULA VE GÖNDER</button>
+    <div id="status">Durum: Bekleniyor...</div>
 
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
 
-        async function cek() {
-            const site = document.getElementById('site').value;
-            const durum = document.getElementById('durum');
-            if(!site) return alert("Site adı girin!");
+        async function veriyiCek() {
+            const site = document.getElementById('siteName').value;
+            const status = document.getElementById('status');
+            if(!site) return alert("Site adı gir!");
 
-            durum.innerText = "Bağlantı kuruluyor, lütfen bekleyin...";
+            status.innerText = "Sorgulanıyor...";
 
-            // API linkini bir köprü (proxy) içine alıyoruz ki "BOŞ" gelmesin
-            const api = "https://free.zirveexec.com/api_public.php?site=" + site;
-            const proxy = "https://api.allorigins.win/get?url=" + encodeURIComponent(api);
+            // SENİN VERDİĞİN LİNK BURADA:
+            const apiLink = "https://free.zirveexec.com/api_public.php?site=" + site;
 
             try {
-                const res = await fetch(proxy);
-                const json = await res.json();
-                const veri = json.contents; // Köprüden gelen asıl veri
+                // Doğrudan API'den veri çekmeye çalışıyoruz
+                const response = await fetch(apiLink);
+                const data = await response.text();
 
-                if (veri && veri.length > 10) {
-                    durum.innerText = "✅ Veri alındı, gönderiliyor...";
-                    tg.sendData(JSON.stringify({ s: site, d: veri }));
+                if (data.length > 5) {
+                    status.innerText = "✅ Başarılı! Veri gönderiliyor...";
+                    // Botun anlayacağı kısa isimlerle veriyi bota yolluyoruz
+                    tg.sendData(JSON.stringify({ s: site, d: data }));
                     setTimeout(() => tg.close(), 1000);
                 } else {
-                    durum.innerText = "❌ API hala boş dönüyor. Başka site deneyin.";
+                    status.innerText = "❌ API boş döndü. Başka site deneyin.";
                 }
             } catch (e) {
-                durum.innerText = "⚠️ Bağlantı hatası!";
+                // Eğer burada hata veriyorsa, tarayıcı (CORS) bu siteye erişimi engelliyor demektir.
+                status.innerText = "⚠️ Erişim Engeli! API sitesi tarayıcıya izin vermiyor.";
+                tg.sendData(JSON.stringify({ s: site, action: "error" }));
             }
         }
     </script>
