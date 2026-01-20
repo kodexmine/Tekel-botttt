@@ -4,56 +4,48 @@
     <meta charset="UTF-8">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { background: #0e1621; color: white; text-align: center; font-family: 'Segoe UI', sans-serif; padding: 20px; }
-        .box { border: 1px solid #2b5278; padding: 20px; border-radius: 15px; background: #17212b; }
-        input { width: 85%; padding: 12px; border-radius: 8px; border: 1px solid #2b5278; background: #0e1621; color: white; margin-bottom: 15px; }
-        button { background: #2481cc; color: white; border: none; padding: 15px; border-radius: 8px; width: 90%; font-weight: bold; cursor: pointer; }
-        #status { margin-top: 15px; color: #34e0eb; font-size: 13px; }
+        body { background: #0e1621; color: white; text-align: center; font-family: sans-serif; padding: 20px; }
+        input { width: 90%; padding: 12px; margin: 15px 0; border-radius: 8px; border: 1px solid #2b5278; background: #17212b; color: white; }
+        button { background: #2481cc; color: white; border: none; padding: 15px; border-radius: 8px; cursor: pointer; width: 95%; font-weight: bold; }
     </style>
 </head>
 <body>
-    <div class="box">
-        <h3>🔥 TEKEL BYPASS SORGULAR</h3>
-        <input type="text" id="site" placeholder="Site adı (Örn: netflix)">
-        <button id="mainBtn" onclick="sorgula()">VERİLERİ ÇEK VE GÖNDER</button>
-        <div id="status">Sistem hazır, sorgu bekleniyor.</div>
-    </div>
+    <h3>🚀 TEKEL SORGU</h3>
+    <input type="text" id="siteInput" placeholder="Site adı girin...">
+    <button onclick="sorguYap()">VERİLERİ ÇEK</button>
+    <div id="durum" style="margin-top:10px; font-size:12px; color:#aaa;">Hazır</div>
 
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
 
-        async function sorgula() {
-            const site = document.getElementById('site').value;
-            const status = document.getElementById('status');
-            const btn = document.getElementById('mainBtn');
-            
-            if(!site) return alert("Site adı giriniz!");
+        async function sorguYap() {
+            const site = document.getElementById('siteInput').value;
+            const durum = document.getElementById('durum');
+            if(!site) return alert("Site adı boş!");
 
-            btn.disabled = true;
-            status.innerText = "🔄 API ile güvenli bağlantı kuruluyor...";
+            durum.innerText = "Veri çekiliyor...";
+
+            // API adresini oluşturuyoruz
+            const apiLink = "https://free.zirveexec.com/api_public.php?site=" + encodeURIComponent(site);
             
-            // API linkini Google Proxy üzerinden geçirerek CORS engelini aşıyoruz
-            const target = "https://free.zirveexec.com/api_public.php?site=" + site;
-            const proxy = "https://images1-focus-opensocial.googleusercontent.com/gadgets/proxy?container=focus&refresh=60&url=" + encodeURIComponent(target);
+            // Proxy linki (AllOrigins bazen takılabilir, bu alternatif bir köprüdür)
+            const proxy = "https://api.allorigins.win/get?url=" + encodeURIComponent(apiLink);
 
             try {
                 const response = await fetch(proxy);
-                const data = await response.text();
-
-                if (data.length > 15) {
-                    status.innerText = "✅ Veri çekildi! Bota aktarılıyor...";
-                    // Veriyi bota JSON olarak gönderiyoruz
-                    tg.sendData(JSON.stringify({ site: site, data: data }));
-                    setTimeout(() => tg.close(), 800);
+                const json = await response.json();
+                
+                // contents kısmı API'den gelen asıl yazıdır
+                if (json.contents && json.contents.length > 5) {
+                    tg.sendData(JSON.stringify({ site: site, data: json.contents }));
+                    tg.close();
                 } else {
-                    status.innerText = "⚠️ API Yanıt Vermedi (Boş döndü).";
-                    btn.disabled = false;
+                    durum.innerText = "Hata: API'den boş yanıt geldi.";
+                    alert("API şu an veri vermiyor. Başka bir site deneyin.");
                 }
             } catch (e) {
-                status.innerText = "❌ Google Proxy Engellendi. Manuel deneniyor...";
-                // Hata durumunda bota 'sen dene' talimatı yolla
-                tg.sendData(JSON.stringify({ site: site, action: "manual_retry" }));
+                durum.innerText = "Bağlantı hatası!";
             }
         }
     </script>
