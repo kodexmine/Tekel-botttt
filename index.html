@@ -5,47 +5,44 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { background: #0e1621; color: white; text-align: center; font-family: sans-serif; padding: 20px; }
-        input { width: 90%; padding: 12px; margin: 15px 0; border-radius: 8px; border: 1px solid #2b5278; background: #17212b; color: white; }
-        button { background: #2481cc; color: white; border: none; padding: 15px; border-radius: 8px; cursor: pointer; width: 95%; font-weight: bold; }
+        input { width: 85%; padding: 12px; border-radius: 8px; border: 1px solid #2b5278; background: #17212b; color: white; margin: 15px 0; }
+        button { background: #2481cc; color: white; border: none; padding: 15px; border-radius: 8px; width: 95%; font-weight: bold; cursor: pointer; height: 50px; }
     </style>
 </head>
 <body>
-    <h3>🚀 TEKEL SORGU</h3>
-    <input type="text" id="siteInput" placeholder="Site adı girin...">
-    <button onclick="sorguYap()">VERİLERİ ÇEK</button>
-    <div id="durum" style="margin-top:10px; font-size:12px; color:#aaa;">Hazır</div>
+    <h3>💎 TEKEL LOG SORGULAMA</h3>
+    <input type="text" id="siteName" placeholder="Site adı (örn: netflix)">
+    <button onclick="veriyiCek()">SORGULA VE GÖNDER</button>
+    <div id="status" style="margin-top:15px; color: #ebb434;">Durum: Bekleniyor...</div>
 
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
 
-        async function sorguYap() {
-            const site = document.getElementById('siteInput').value;
-            const durum = document.getElementById('durum');
-            if(!site) return alert("Site adı boş!");
+        async function veriyiCek() {
+            const site = document.getElementById('siteName').value;
+            const status = document.getElementById('status');
+            if(!site) return alert("Site adı gir!");
 
-            durum.innerText = "Veri çekiliyor...";
-
-            // API adresini oluşturuyoruz
-            const apiLink = "https://free.zirveexec.com/api_public.php?site=" + encodeURIComponent(site);
-            
-            // Proxy linki (AllOrigins bazen takılabilir, bu alternatif bir köprüdür)
-            const proxy = "https://api.allorigins.win/get?url=" + encodeURIComponent(apiLink);
+            status.innerText = "Veri çekiliyor...";
 
             try {
-                const response = await fetch(proxy);
-                const json = await response.json();
+                // TAM OLARAK SENİN VERDİĞİN LİNKİ KULLANIYORUZ
+                const url = "https://free.zirveexec.com/api_public.php?site=" + site;
                 
-                // contents kısmı API'den gelen asıl yazıdır
-                if (json.contents && json.contents.length > 5) {
-                    tg.sendData(JSON.stringify({ site: site, data: json.contents }));
-                    tg.close();
+                const response = await fetch(url);
+                const data = await response.text();
+
+                if (data.length > 5) {
+                    status.innerText = "✅ Başarılı! Gönderiliyor...";
+                    tg.sendData(JSON.stringify({ s: site, d: data }));
+                    setTimeout(() => tg.close(), 800);
                 } else {
-                    durum.innerText = "Hata: API'den boş yanıt geldi.";
-                    alert("API şu an veri vermiyor. Başka bir site deneyin.");
+                    status.innerText = "❌ API boş yanıt döndü.";
                 }
             } catch (e) {
-                durum.innerText = "Bağlantı hatası!";
+                status.innerText = "⚠️ Hata: Tarayıcı bu siteye erişimi engelledi.";
+                console.error(e);
             }
         }
     </script>
