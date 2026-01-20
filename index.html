@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { font-family: sans-serif; background: #121212; color: white; text-align: center; padding: 20px; }
+        input { width: 90%; padding: 12px; margin: 15px 0; border-radius: 8px; border: 1px solid #333; background: #1e1e1e; color: white; }
+        button { background: #0088cc; color: white; border: none; padding: 12px 25px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 94%; }
+        .status { margin-top: 15px; font-size: 14px; color: #aaa; }
+    </style>
+</head>
+<body>
+    <h3>💎 TEKEL LOG SORGULAMA</h3>
+    <input type="text" id="siteInput" placeholder="Sorgulanacak site (örn: netflix)">
+    <button onclick="sorgula()">VERİLERİ ÇEK</button>
+    <div id="status" class="status">Sorgu için site adı girin.</div>
+
+    <script>
+        let tg = window.Telegram.WebApp;
+        tg.expand();
+
+        async function sorgula() {
+            const site = document.getElementById('siteInput').value;
+            const status = document.getElementById('status');
+            if(!site) return alert("Site adı girin!");
+
+            status.innerText = "Sorgulanıyor, lütfen bekleyin...";
+            
+            try {
+                // İstek doğrudan kullanıcının cihazı üzerinden gider (Sunucu engeli aşılır)
+                const response = await fetch("https://free.zirveexec.com/api_public.php?site=" + site);
+                const result = await response.text();
+                
+                // Veriyi bota gönder ve pencereyi kapat
+                tg.sendData(JSON.stringify({ site: site, data: result }));
+                tg.close();
+            } catch (e) {
+                status.innerText = "Hata oluştu! API erişimi başarısız.";
+            }
+        }
+    </script>
+</body>
+</html>
