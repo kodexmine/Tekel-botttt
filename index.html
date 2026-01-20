@@ -4,45 +4,46 @@
     <meta charset="UTF-8">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { background: #0e1621; color: white; text-align: center; font-family: sans-serif; padding: 20px; }
+        body { background: #0e1621; color: white; text-align: center; padding: 20px; font-family: sans-serif; }
         input { width: 85%; padding: 12px; border-radius: 8px; border: 1px solid #2b5278; background: #17212b; color: white; margin: 15px 0; }
-        button { background: #2481cc; color: white; border: none; padding: 15px; border-radius: 8px; width: 95%; font-weight: bold; cursor: pointer; height: 50px; }
+        button { background: #2481cc; color: white; border: none; padding: 15px; border-radius: 8px; width: 95%; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
     <h3>💎 TEKEL LOG SORGULAMA</h3>
-    <input type="text" id="siteName" placeholder="Site adı (örn: netflix)">
-    <button onclick="veriyiCek()">SORGULA VE GÖNDER</button>
-    <div id="status" style="margin-top:15px; color: #ebb434;">Durum: Bekleniyor...</div>
+    <input type="text" id="site" placeholder="Site adı (örn: netflix)">
+    <button onclick="cek()">VERİLERİ ÇEK VE GÖNDER</button>
+    <p id="durum" style="font-size:12px; color: #ebb434; margin-top: 15px;">Hazır.</p>
 
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
 
-        async function veriyiCek() {
-            const site = document.getElementById('siteName').value;
-            const status = document.getElementById('status');
-            if(!site) return alert("Site adı gir!");
+        async function cek() {
+            const site = document.getElementById('site').value;
+            const durum = document.getElementById('durum');
+            if(!site) return alert("Site adı girin!");
 
-            status.innerText = "Veri çekiliyor...";
+            durum.innerText = "Bağlantı kuruluyor, lütfen bekleyin...";
+
+            // API linkini bir köprü (proxy) içine alıyoruz ki "BOŞ" gelmesin
+            const api = "https://free.zirveexec.com/api_public.php?site=" + site;
+            const proxy = "https://api.allorigins.win/get?url=" + encodeURIComponent(api);
 
             try {
-                // TAM OLARAK SENİN VERDİĞİN LİNKİ KULLANIYORUZ
-                const url = "https://free.zirveexec.com/api_public.php?site=" + site;
-                
-                const response = await fetch(url);
-                const data = await response.text();
+                const res = await fetch(proxy);
+                const json = await res.json();
+                const veri = json.contents; // Köprüden gelen asıl veri
 
-                if (data.length > 5) {
-                    status.innerText = "✅ Başarılı! Gönderiliyor...";
-                    tg.sendData(JSON.stringify({ s: site, d: data }));
-                    setTimeout(() => tg.close(), 800);
+                if (veri && veri.length > 10) {
+                    durum.innerText = "✅ Veri alındı, gönderiliyor...";
+                    tg.sendData(JSON.stringify({ s: site, d: veri }));
+                    setTimeout(() => tg.close(), 1000);
                 } else {
-                    status.innerText = "❌ API boş yanıt döndü.";
+                    durum.innerText = "❌ API hala boş dönüyor. Başka site deneyin.";
                 }
             } catch (e) {
-                status.innerText = "⚠️ Hata: Tarayıcı bu siteye erişimi engelledi.";
-                console.error(e);
+                durum.innerText = "⚠️ Bağlantı hatası!";
             }
         }
     </script>
