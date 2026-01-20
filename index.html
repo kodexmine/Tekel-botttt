@@ -1,53 +1,46 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: sans-serif; background: #0e1621; color: white; text-align: center; padding: 20px; }
-        input { width: 90%; padding: 12px; margin: 15px 0; border-radius: 8px; border: 1px solid #2b5278; background: #17212b; color: white; }
-        button { background: #2481cc; color: white; border: none; padding: 15px; border-radius: 8px; cursor: pointer; width: 95%; font-weight: bold; }
-        #status { margin-top: 20px; color: #aaa; font-size: 14px; }
+        body { background: #1c1c1c; color: white; text-align: center; font-family: sans-serif; padding: 20px; }
+        input { width: 85%; padding: 12px; border-radius: 8px; border: none; margin: 15px 0; }
+        button { background: #0088cc; color: white; border: none; padding: 15px; border-radius: 8px; width: 90%; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
-    <h3>💎 TEKEL LOG SİSTEMİ</h3>
-    <p>Sorgulanacak site adını girin:</p>
-    <input type="text" id="site" placeholder="Örn: netflix">
-    <button onclick="sorgula()">VERİLERİ ÇEK VE BOTA GÖNDER</button>
-    <div id="status">Bekleniyor...</div>
+    <h3>🚀 TEKEL SORGULAMA SİSTEMİ</h3>
+    <input type="text" id="site" placeholder="Site adı girin...">
+    <button onclick="sorgula()">SORGULA VE GÖNDER</button>
+    <p id="msg"></p>
 
     <script>
         let tg = window.Telegram.WebApp;
-        tg.expand(); // Pencereyi tam boy yap
+        tg.expand();
 
         async function sorgula() {
             const site = document.getElementById('site').value;
-            const status = document.getElementById('status');
-            if(!site) return alert("Site adı girin!");
+            const msg = document.getElementById('msg');
+            if(!site) return;
 
-            status.innerText = "Sorgulanıyor... (Biraz sürebilir)";
+            msg.innerText = "Veri çekiliyor, lütfen bekleyin...";
             
             try {
-                // API sitesinin engelini aşmak için AllOrigins köprüsü kullanıyoruz
-                const proxyUrl = "https://api.allorigins.win/get?url=";
-                const apiUrl = encodeURIComponent("https://free.zirveexec.com/api_public.php?site=" + site);
+                // Herhangi bir Proxy kullanmadan doğrudan deniyoruz
+                const response = await fetch("https://free.zirveexec.com/api_public.php?site=" + site);
+                const data = await response.text();
                 
-                const response = await fetch(proxyUrl + apiUrl);
-                const json = await response.json();
-                const result = json.contents; // API'den gelen asıl veri
-                
-                if(!result || result.length < 10) {
-                    status.innerText = "Hata: API'den veri gelmedi veya site bulunamadı.";
-                    return;
+                if(data.length > 5) {
+                    tg.sendData(JSON.stringify({ site: site, data: data }));
+                    tg.close();
+                } else {
+                    msg.innerText = "API boş döndü veya hata verdi.";
                 }
-
-                // Elde edilen veriyi JSON olarak bota gönder
-                tg.sendData(JSON.stringify({ site: site, data: result }));
-                tg.close(); // Pencereyi kapat
             } catch (e) {
-                status.innerText = "Bağlantı Hatası! API şu an kapalı olabilir.";
+                // Eğer doğrudan fetch başarısız olursa, bota haber ver
+                tg.sendData(JSON.stringify({ site: site, error: "baglanti_hatasi" }));
+                msg.innerText = "API erişim engeli! Bot üzerinden manuel denenecek.";
             }
         }
     </script>
